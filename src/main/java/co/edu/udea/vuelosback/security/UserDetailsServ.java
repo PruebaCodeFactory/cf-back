@@ -13,11 +13,10 @@ import co.edu.udea.vuelosback.core.dao.UserRepository;
 import co.edu.udea.vuelosback.core.models.User;
 
 @Service
-public class UserDetailsServ implements UserDetailsService {    
+public class UserDetailsServ implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
-
 
     private User userDetail;
 

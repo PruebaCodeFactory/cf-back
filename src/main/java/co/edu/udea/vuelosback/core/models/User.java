@@ -46,7 +46,7 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "rolesAplicacion", length = 30)
-  private RolesAplicacion rolesAplicacion;
+  private AplicationRole aplicationRole;
 
   public UUID getId() {
     return id;
@@ -88,11 +88,11 @@ public class User {
     this.phoneNumber = phoneNumber;
   }
 
-  public RolesAplicacion getRolesAplicacion() {
-    return rolesAplicacion;
+  public AplicationRole getAplicationRole() {
+    return aplicationRole;
   }
 
-  public void setRolesAplicacion(RolesAplicacion rolesAplicacion) {
-    this.rolesAplicacion = rolesAplicacion;
+  public void setAplicationRole(AplicationRole aplicationRole) {
+    this.aplicationRole = aplicationRole;
   }
 }

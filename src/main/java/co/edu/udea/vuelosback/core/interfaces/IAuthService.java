@@ -2,13 +2,15 @@ package co.edu.udea.vuelosback.core.interfaces;
 
 import java.util.Map;
 
+import co.edu.udea.vuelosback.core.dto.AuthResponse;
+import co.edu.udea.vuelosback.core.dto.LoginRequestDto;
 import co.edu.udea.vuelosback.core.dto.UserRegisterRequestDto;
 import org.springframework.http.ResponseEntity;
 
 public interface IAuthService {
 
-    ResponseEntity<Map<String, String>> login(Map<String, String> requestMap);
+    AuthResponse login(LoginRequestDto requestMap);
 
-    ResponseEntity<Map<String, String>> register(UserRegisterRequestDto request);
+    AuthResponse register(UserRegisterRequestDto request);
 
 }

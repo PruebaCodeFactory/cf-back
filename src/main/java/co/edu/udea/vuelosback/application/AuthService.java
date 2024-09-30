@@ -1,22 +1,20 @@
 package co.edu.udea.vuelosback.application;
 
-import java.util.Map;
-
 import co.edu.udea.vuelosback.core.dao.UserRepository;
+import co.edu.udea.vuelosback.core.dto.AuthResponse;
+import co.edu.udea.vuelosback.core.dto.LoginRequestDto;
 import co.edu.udea.vuelosback.core.dto.UserRegisterRequestDto;
-import co.edu.udea.vuelosback.core.models.RolesAplicacion;
+import co.edu.udea.vuelosback.core.models.AplicationRole;
 import co.edu.udea.vuelosback.core.models.User;
-import co.edu.udea.vuelosback.utils.ApplicationUtils;
+import graphql.GraphQLException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import co.edu.udea.vuelosback.security.UserDetailsServ;
 import co.edu.udea.vuelosback.security.jwt.JwtUtil;
 import co.edu.udea.vuelosback.core.interfaces.IAuthService;
 
@@ -25,9 +23,6 @@ public class AuthService implements IAuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserDetailsServ userDetailServ;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -39,51 +34,33 @@ public class AuthService implements IAuthService {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public ResponseEntity<Map<String, String>> login(Map<String, String> requestMap) {
+    public AuthResponse login(LoginRequestDto request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(requestMap.get("email"), requestMap.get("password"))
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-
-            if (authentication.isAuthenticated()) {
-                if (userDetailServ.getUserDetail() != null) {
-                    String token = jwtUtil.generateToken(
-                            userDetailServ.getUserDetail().getEmail(),
-                            userDetailServ.getUserDetail().getRolesAplicacion().getRol()
-                    );
-                    return ApplicationUtils.generateResponse(
-                            Map.of("token", token, "message", "ok"),
-                            HttpStatus.OK
-                    );
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("Ha ocurrido un error al intentar loguearse " + e.getMessage());
+            User user = userRepository.findByEmail(request.getEmail());
+            return new AuthResponse(jwtUtil.generateToken(
+                    user.getEmail(),
+                    user.getAplicationRole().getRol()
+            ));
+        } catch (BadCredentialsException e) {
+            throw new GraphQLException("Invalid credentials");
         }
-        return ApplicationUtils.generateResponse(
-                Map.of("message", "Credenciales Incorrectas"),
-                HttpStatus.BAD_REQUEST
-        );
     }
 
+
     @Override
-    public ResponseEntity<Map<String, String>> register(UserRegisterRequestDto request) {
+    public AuthResponse register(UserRegisterRequestDto request) {
         try {
 
-            if(!request.isAcceptTerms()) {
-                return ApplicationUtils.generateResponse(
-                        Map.of("message", "Debe aceptar los terminos y condiciones"),
-                        HttpStatus.BAD_REQUEST
-                );
+            if (!request.isAcceptTerms()) {
+                throw new GraphQLException("You must accept terms and conditions");
             }
 
             User exists = userRepository.findByEmail(request.getEmail());
             if (exists != null) {
-                return ApplicationUtils.generateResponse(
-                        Map.of("message", "Ya existe una cuenta registrada con estre email"),
-                        HttpStatus.BAD_REQUEST
-                );
+                throw new GraphQLException("Already exists an user with this email");
             }
 
             User newUser = User.builder()
@@ -91,26 +68,17 @@ public class AuthService implements IAuthService {
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .phoneNumber(request.getPhoneNumber())
-                    .rolesAplicacion(RolesAplicacion.usuario)
+                    .aplicationRole(AplicationRole.usuario)
                     .build();
             userRepository.save(newUser);
 
-            return ApplicationUtils.generateResponse(
-                    Map.of(
-                            "message", "ok",
-                            "token", jwtUtil.generateToken(newUser.getEmail(), newUser.getRolesAplicacion().getRol())
-                    ),
-                    HttpStatus.OK
-            );
+            return new AuthResponse(jwtUtil.generateToken(
+                    newUser.getEmail(),
+                    newUser.getAplicationRole().getRol()
+            ));
         } catch (Exception e) {
-            System.out.println("Ha ocurrido un error al intentar registrar el usuario " + e.getMessage());
-            return ApplicationUtils.generateResponse(
-                    Map.of("message", "Ha ocurrido un error al intentar registrar el usuario"),
-                    HttpStatus.BAD_REQUEST
-            );
+            throw new GraphQLException(e.getMessage());
         }
-
     }
-
 
 }

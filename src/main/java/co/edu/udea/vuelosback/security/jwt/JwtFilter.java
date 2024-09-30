@@ -31,36 +31,43 @@ public class JwtFilter extends OncePerRequestFilter {
     private String username = null;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (request.getServletPath().startsWith("/api/auth")) {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        String header = request.getHeader("Authorization");
+
+        if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-        } else {
-            String authorizationHeader = request.getHeader("Authorization");
-            String token = null;
-
-            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Cliente no autorizado");
-                return;
-            }
-
-            token = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsername(token);
-            claims = jwtUtil.extractAllClaims(token);
-
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsServ.loadUserByUsername(username);
-                if (jwtUtil.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                    new WebAuthenticationDetailsSource().buildDetails(request);
-                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                }
-                
-            }
-            filterChain.doFilter(request, response);
+            return;
         }
+
+        String authorizationHeader = request.getHeader("Authorization");
+        String token = null;
+
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Cliente no autorizado");
+            return;
+        }
+
+        token = authorizationHeader.substring(7);
+        username = jwtUtil.extractUsername(token);
+        claims = jwtUtil.extractAllClaims(token);
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsServ.loadUserByUsername(username);
+            if (jwtUtil.validateToken(token, userDetails)) {
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                new WebAuthenticationDetailsSource().buildDetails(request);
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            }
+        }
+        filterChain.doFilter(request, response);
     }
 
     public Boolean isAdmin() {
