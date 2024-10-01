@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -19,7 +20,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    public String extractUsername(String token) {
+    public String getUserEmailFromToken(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -40,10 +41,11 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(UUID id, String userEmail, String role) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("id", id);
         claims.put("role", role);
-        return createToken(username, claims);
+        return createToken(userEmail, claims);
     }
     
     private String createToken(String subject, Map<String, Object> claims) {
@@ -56,8 +58,8 @@ public class JwtUtil {
     }
     
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) &&!isTokenExpired(token));
+        final String userEmail = getUserEmailFromToken(token);
+        return (userEmail.equals(userDetails.getUsername()) &&!isTokenExpired(token));
     }
     
 

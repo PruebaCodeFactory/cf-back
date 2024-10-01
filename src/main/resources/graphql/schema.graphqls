@@ -29,7 +29,7 @@ enum Role {
 }
 
 type Query {
-    getUser(id: ID!): User!
+    getUser(id: String!): User
 }
 
 type Mutation {

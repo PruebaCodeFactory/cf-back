@@ -1,7 +1,7 @@
 package co.edu.udea.vuelosback.application;
 
 import co.edu.udea.vuelosback.core.dao.UserRepository;
-import co.edu.udea.vuelosback.core.dto.AuthResponse;
+import co.edu.udea.vuelosback.core.dto.AuthResponseDto;
 import co.edu.udea.vuelosback.core.dto.LoginRequestDto;
 import co.edu.udea.vuelosback.core.dto.UserRegisterRequestDto;
 import co.edu.udea.vuelosback.core.models.AplicationRole;
@@ -34,13 +34,14 @@ public class AuthService implements IAuthService {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public AuthResponse login(LoginRequestDto request) {
+    public AuthResponseDto login(LoginRequestDto request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
             User user = userRepository.findByEmail(request.getEmail());
-            return new AuthResponse(jwtUtil.generateToken(
+            return new AuthResponseDto(jwtUtil.generateToken(
+                    user.getId(),
                     user.getEmail(),
                     user.getAplicationRole().getRol()
             ));
@@ -51,7 +52,7 @@ public class AuthService implements IAuthService {
 
 
     @Override
-    public AuthResponse register(UserRegisterRequestDto request) {
+    public AuthResponseDto register(UserRegisterRequestDto request) {
         try {
 
             if (!request.isAcceptTerms()) {
@@ -72,7 +73,8 @@ public class AuthService implements IAuthService {
                     .build();
             userRepository.save(newUser);
 
-            return new AuthResponse(jwtUtil.generateToken(
+            return new AuthResponseDto(jwtUtil.generateToken(
+                    newUser.getId(),
                     newUser.getEmail(),
                     newUser.getAplicationRole().getRol()
             ));
