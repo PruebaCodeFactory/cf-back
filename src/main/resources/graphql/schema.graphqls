@@ -1,0 +1,38 @@
+type User {
+    id: ID!
+    fullName: String!
+    email: String!
+    phoneNumber: String!
+    role: Role!
+}
+
+type AuthResponse {
+    token: String!
+}
+
+input LoginRequest {
+    email: String!
+    password: String!
+}
+
+input RegisterRequest {
+    fullName: String!
+    email: String!
+    password: String!
+    phoneNumber: String!
+    acceptTerms: Boolean!
+}
+
+enum Role {
+    ADMIN
+    USER
+}
+
+type Query {
+    getUser(id: String!): User
+}
+
+type Mutation {
+    login(request: LoginRequest!): AuthResponse
+    register(request: RegisterRequest!): AuthResponse
+}
